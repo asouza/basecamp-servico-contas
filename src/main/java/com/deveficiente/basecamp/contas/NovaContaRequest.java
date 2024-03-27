@@ -1,5 +1,7 @@
 package com.deveficiente.basecamp.contas;
 
+import java.util.UUID;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -19,6 +21,10 @@ public class NovaContaRequest {
 	
 	public NovaContaOwnerRequest getNovaContaOwnerRequest() {
 		return novaContaOwnerRequest;
+	}
+
+	public Conta toModel(UUID idGlobalOwner) {
+		return new Conta(this.nome,idGlobalOwner);
 	}
 
 }
