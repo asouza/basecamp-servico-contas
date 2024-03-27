@@ -1,7 +1,12 @@
 package com.deveficiente.basecamp.contas;
 
+import java.net.URI;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,7 +33,7 @@ public class NovaContaController {
 	}
 
 	@PostMapping("/api/contas/v1")
-	public UUID executa(@Valid @RequestBody NovaContaRequest request) {
+	public ResponseEntity<?> executa(@Valid @RequestBody NovaContaRequest request) {
 
 		UUID idGlobalOwner = retrierDefault.executa(() -> pessoaUsuariaClient
 				.criaPessoaUsuaria(new NovaPessoaUsuarioRequest(
@@ -41,9 +46,22 @@ public class NovaContaController {
 		 * Estou abrindo a porta para inconsistência, pois posso passar um id
 		 * global que não tem nada a ver com o retorno de cima
 		 */
-		Conta novaConta = request.toModel(idGlobalOwner);
-		contaRepository.save(novaConta);
+		
+		Optional<Conta> possivelConta = contaRepository.findByIdOwnerPrimaria(idGlobalOwner);
+		
+		return possivelConta.map(contaExiste -> {
+			return ResponseEntity
+					.status(HttpStatus.FOUND)
+					//aqui podia até virar um retorno rico indicando como atualizar
+					.location(URI.create("http://exemplo.com.br"))
+					.build();
+		}).orElseGet(() -> {
+			Conta novaConta = request.toModel(idGlobalOwner);
+			contaRepository.save(novaConta);
+			
+			return ResponseEntity.ok(novaConta.getIdGlobal());
+			
+		});
 
-		return novaConta.getIdGlobal();
 	}
 }

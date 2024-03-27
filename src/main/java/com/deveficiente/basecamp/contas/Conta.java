@@ -22,6 +22,11 @@ public class Conta {
 	private UUID idOwnerPrimaria;
 	@NotNull
 	private UUID idGlobal = UUID.randomUUID();
+	
+	@Deprecated
+	public Conta() {
+		
+	}
 
 	public Conta(@NotBlank String nome, UUID idOwnerPrimaria) {
 		this.nome = nome;
