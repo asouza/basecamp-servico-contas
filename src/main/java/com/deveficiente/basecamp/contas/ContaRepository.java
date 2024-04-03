@@ -9,4 +9,5 @@ public interface ContaRepository extends JpaRepository<Conta, Long>{
 
 	Optional<Conta> findByIdOwnerPrimaria(UUID idOwnerPrimario);
 
+    Optional<Conta> findByIdGlobal(UUID idGlobal);
 }
