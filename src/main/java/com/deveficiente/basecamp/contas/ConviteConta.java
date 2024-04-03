@@ -1,9 +1,6 @@
 package com.deveficiente.basecamp.contas;
 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
@@ -13,6 +10,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
 
+@Entity
 public class ConviteConta {
 
     @Id
