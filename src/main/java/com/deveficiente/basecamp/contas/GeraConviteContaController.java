@@ -1,35 +1,37 @@
 package com.deveficiente.basecamp.contas;
 
 import com.deveficiente.basecamp.contas.compartilhado.OptionalToHttpStatusException;
+import com.deveficiente.basecamp.contas.compartilhado.workflow.BusinessFlowRegister;
+import com.deveficiente.basecamp.contas.compartilhado.workflow.BusinessFlowSteps;
 import jakarta.validation.Valid;
-import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 public class GeraConviteContaController {
     private ContaRepository contaRepository;
     private ConviteRepository conviteRepository;
     private EnviaEmailConvites enviaEmailConvites;
+    private BusinessFlowRegister businessFlowRegister;
 
     public GeraConviteContaController(ContaRepository contaRepository,
-                                      ConviteRepository conviteRepository,EnviaEmailConvites enviaEmailConvites) {
+                                      ConviteRepository conviteRepository,EnviaEmailConvites enviaEmailConvites,BusinessFlowRegister businessFlowRegister) {
         this.contaRepository = contaRepository;
         this.conviteRepository = conviteRepository;
         this.enviaEmailConvites = enviaEmailConvites;
+        this.businessFlowRegister = businessFlowRegister;
     }
 
     @PostMapping("/api/contas/v1/{idConta}/convites")
-    public void geraConvite(@AuthenticationPrincipal UUID idOwnerPrimaria
+    public void geraConvite(@RequestHeader("idempotency-key") String idempotencyKey, @AuthenticationPrincipal UUID idOwnerPrimaria
             , @PathVariable("idConta") UUID idConta, @Valid @RequestBody NovoConviteContaRequest request) {
 
         Conta conta = OptionalToHttpStatusException
@@ -53,10 +55,31 @@ public class GeraConviteContaController {
          */
         //conta.geraConvite(idOwnerPrimaria, request.getDataExpiracao(), request.getEmailsConvidados());
 
-        Set<ConviteConta> convites = conta.geraConvites(request);
-        conviteRepository.saveAll(convites);
+        BusinessFlowSteps workflow = businessFlowRegister
+                .execute("geracao-convite-conta", idempotencyKey.concat(idOwnerPrimaria.toString()));
 
-        enviaEmailConvites.executa(convites);
+        String idsConvites = workflow.executeOnlyOnce("salva-convites", () -> {
+            Set<ConviteConta> convites = conta.geraConvites(request);
+            conviteRepository.saveAll(convites);
+            return convites
+                    .stream()
+                    .map(convite -> convite.getId().toString())
+                    .collect(Collectors.joining(","));
+        });
+
+        workflow.executeOnlyOnce("envia-email-convites",() -> {
+            //este codigo é consequencia do uso do workflow
+            List<ConviteConta> convites = conviteRepository
+                    .findAllById(Stream.of(idsConvites.split(","))
+                            .map(Long::valueOf)
+                            .toList());
+
+            enviaEmailConvites.executa(convites);
+
+            //nao tinha string para retornar aqui.
+            return "emails-enviados";
+        });
+
 
 
 

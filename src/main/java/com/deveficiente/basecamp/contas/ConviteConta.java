@@ -51,4 +51,8 @@ public class ConviteConta {
     public String getEmail() {
         return this.email;
     }
+
+    public Long getId() {
+        return this.id;
+    }
 }

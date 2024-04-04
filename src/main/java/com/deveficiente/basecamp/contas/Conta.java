@@ -61,6 +61,8 @@ public class Conta {
 		List<ConviteConta> convitesGerados = request.toConvites(this);
 		HashSet<ConviteConta> convitesUnicos = new HashSet<>(convitesGerados);
 
+		//aqui eu pensei em não deixar duplicar convite... mas pensei melhor e não vi problema.
+
 		//exemplo de pós condicao
 		Assert.isTrue(convitesUnicos.size() == convitesGerados.size(),"O número de convites unicos está diferente do numero de convites solicitados originalmente. Deve ter email duplicado na lista original");
 
