@@ -47,4 +47,8 @@ public class ConviteConta {
     public int hashCode() {
         return Objects.hash(email, conta);
     }
+
+    public String getEmail() {
+        return this.email;
+    }
 }

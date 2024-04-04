@@ -2,6 +2,7 @@ package com.deveficiente.basecamp.contas;
 
 import com.deveficiente.basecamp.contas.compartilhado.OptionalToHttpStatusException;
 import jakarta.validation.Valid;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,9 +18,14 @@ import java.util.UUID;
 @RestController
 public class GeraConviteContaController {
     private ContaRepository contaRepository;
+    private ConviteRepository conviteRepository;
+    private EnviaEmailConvites enviaEmailConvites;
 
-    public GeraConviteContaController(ContaRepository contaRepository) {
+    public GeraConviteContaController(ContaRepository contaRepository,
+                                      ConviteRepository conviteRepository,EnviaEmailConvites enviaEmailConvites) {
         this.contaRepository = contaRepository;
+        this.conviteRepository = conviteRepository;
+        this.enviaEmailConvites = enviaEmailConvites;
     }
 
     @PostMapping("/api/contas/v1/{idConta}/convites")
@@ -48,6 +54,9 @@ public class GeraConviteContaController {
         //conta.geraConvite(idOwnerPrimaria, request.getDataExpiracao(), request.getEmailsConvidados());
 
         Set<ConviteConta> convites = conta.geraConvites(request);
+        conviteRepository.saveAll(convites);
+
+        enviaEmailConvites.executa(convites);
 
 
 
